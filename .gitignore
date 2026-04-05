@@ -1,6 +1,14 @@
-# .gitignore
-
+# 🔐 Variables sensibles
 .env
+
+# 🐍 Python
 __pycache__/
 *.pyc
 .venv/
+
+# 🚫 Tu otro repo (CLAVE)
+vercel-pulcho/
+
+# 🧪 Archivos temporales (opcional pero útil)
+*.log
+.DS_Store

@@ -4,6 +4,8 @@ import pandas as pd
 import re
 from datetime import datetime
 
+TZ = "America/Bogota"
+
 
 KEYWORDS_CONSUMO = [
     "CLUB COLOMBIA",
@@ -21,7 +23,10 @@ def to_dataframe(transactions):
     df = pd.DataFrame(transactions)
 
     df["amount"] = df["amount"] / 1000
+
+    # 🔥 CLAVE: normalizar zona horaria
     df["date"] = pd.to_datetime(df["date"])
+    df["date"] = df["date"].dt.tz_localize("UTC").dt.tz_convert(TZ)
 
     return df
 
@@ -82,7 +87,10 @@ def construir_datetime(row):
 
     try:
         hora = datetime.strptime(row["hora"], "%H:%M").time()
-        return pd.Timestamp.combine(fecha.date(), hora)
+
+        # 🔥 CLAVE: mantener zona horaria consistente
+        return pd.Timestamp.combine(fecha.date(), hora).tz_localize(TZ)
+
     except:
         return fecha
 
@@ -110,7 +118,9 @@ def horas_sin_consumo(consumos):
     if ultimo is None:
         return 0
 
-    ahora = pd.Timestamp.now()
+    # 🔥 CLAVE: ahora con misma zona
+    ahora = pd.Timestamp.now(tz=TZ)
+
     return (ahora - ultimo).total_seconds() / 3600
 
 

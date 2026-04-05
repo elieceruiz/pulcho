@@ -1,10 +1,15 @@
 # notifier.py
 
+# notifier.py
+
 import requests
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+from pathlib import Path
+
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 ONESIGNAL_APP_ID = os.getenv("ONESIGNAL_APP_ID")
 ONESIGNAL_API_KEY = os.getenv("ONESIGNAL_API_KEY")
@@ -27,6 +32,6 @@ def enviar_notificacion(mensaje):
     response = requests.post(url, json=payload, headers=headers)
 
     if response.status_code != 200:
-        print("Error OneSignal:", response.status_code, response.text)
+        print("❌ Error OneSignal:", response.status_code, response.text)
     else:
-        print("OneSignal OK:", response.json())
+        print("✅ OneSignal OK:", response.json())

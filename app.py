@@ -5,6 +5,13 @@ from streamlit_autorefresh import st_autorefresh
 from ynab_client import get_transactions
 from processor import *
 
+# 🔹 CACHE (evita pegarle a YNAB en cada refresh)
+@st.cache_data(ttl=30)
+def cargar_datos():
+    txs = get_transactions()
+    df = to_dataframe(txs)
+    return df
+
 # 🔹 FECHAS EN ESPAÑOL
 MESES = {
     1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr",
@@ -19,6 +26,7 @@ def fmt_money(x):
     return f"${int(x):,}".replace(",", ".")
 
 
+# 🔹 CONFIG
 st.set_page_config(
     page_title="Pulcho",
     page_icon="🍻",
@@ -27,27 +35,34 @@ st.set_page_config(
 
 st.title("🍻 Pulcho")
 
+# 🔄 REFRESH AUTOMÁTICO
 st_autorefresh(interval=20000, key="refresh")
 
+
 # 🔹 DATA
-txs = get_transactions()
-df = to_dataframe(txs)
+df = cargar_datos()
 
 consumos = get_consumos(df)
 consumos = agregar_hora(consumos)
 consumos = agregar_producto_limpio(consumos)
 consumos = agregar_datetime_real(consumos)
 
+# 🔹 PROTECCIÓN
+if consumos.empty:
+    st.warning("No hay consumos registrados")
+    st.stop()
+
 carve = get_carve(df)
-carve = agregar_hora(carve)  # ✅ AQUÍ SE AGREGA
+carve = agregar_hora(carve)
+
 
 # 🔹 MÉTRICAS
 total = total_consumo(consumos)
 horas = horas_sin_consumo(consumos)
 
 resumen = resumen_carve(carve)
+precio = resumen.get("precio_gramo")
 
-precio = resumen["precio_gramo"]
 gramos_equivalentes = total / precio if precio else 0
 
 
@@ -120,7 +135,7 @@ with tab_consumos:
 # --- CARVE ---
 with tab_carve:
     
-    if precio is not None:
+    if precio:
         st.markdown(f"### ${round(precio, 2)} / g")
     else:
         st.markdown("### —")
@@ -132,7 +147,7 @@ with tab_carve:
     tabla = carve.sort_values("date", ascending=False).copy()
 
     tabla["Fecha"] = tabla["date"].apply(formatear_fecha_es)
-    tabla["Hora"] = tabla["hora"]  # ✅ NUEVA COLUMNA
+    tabla["Hora"] = tabla["hora"]
     tabla["Presentación"] = tabla["memo"]
     tabla["Valor"] = tabla["amount"].abs().apply(fmt_money)
 
