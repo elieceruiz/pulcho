@@ -29,26 +29,6 @@ st.title("🍻 Pulcho")
 
 st_autorefresh(interval=20000, key="refresh")
 
-import streamlit.components.v1 as components
-
-components.html("""
-<div id="onesignal-container"></div>
-
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"></script>
-<script>
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-        appId: "8d1251b2-5f4b-4aab-8410-dd717600ed8f",
-        notifyButton: {
-            enable: true
-        }
-    });
-});
-</script>
-""", height=100)
-
-
 # 🔹 DATA
 txs = get_transactions()
 df = to_dataframe(txs)
