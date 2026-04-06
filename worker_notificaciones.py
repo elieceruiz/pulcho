@@ -28,7 +28,6 @@ except Exception as e:
     print(str(e), flush=True)
     print(traceback.format_exc(), flush=True)
 
-    # 🔥 evita restart inmediato (te deja leer logs)
     time.sleep(60)
     sys.exit(1)
 
@@ -90,11 +89,15 @@ def main():
             if horas is None:
                 print("⚠️ No se pudo calcular horas", flush=True)
             else:
-                horas_int = max(0, int(round(horas)))
+                horas_int = int(horas)  # 🔥 sin round
 
                 print(f"⏱️ Horas sin consumo: {horas:.2f}", flush=True)
 
-                if horas_int > 0 and horas_int != ultima_hora_notificada:
+                # 🔥 lógica mejorada (sin huecos raros)
+                if horas_int > 0 and (
+                    ultima_hora_notificada is None
+                    or horas_int >= ultima_hora_notificada + 1
+                ):
                     mensaje = f"Llevas {horas_int}h sin consumo. Vas bien."
 
                     try:
@@ -132,6 +135,5 @@ if __name__ == "__main__":
         print(str(e), flush=True)
         print(traceback.format_exc(), flush=True)
 
-        # 🔥 evita restart inmediato
         time.sleep(60)
         sys.exit(1)
