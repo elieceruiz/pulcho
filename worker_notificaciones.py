@@ -1,10 +1,16 @@
 import time
 import traceback
+import sys
 
-print("🚨 BOOT: iniciando worker (antes de imports)")
+print("🚨 BOOT 1: archivo ejecutándose", flush=True)
 
+# 🔥 IMPORTS PROTEGIDOS (diagnóstico real)
 try:
+    print("🚨 BOOT 2: cargando módulos...", flush=True)
+
     from ynab_client import get_transactions
+    print("✅ ynab_client OK", flush=True)
+
     from processor import (
         to_dataframe,
         get_consumos,
@@ -12,30 +18,37 @@ try:
         agregar_datetime_real,
         horas_sin_consumo
     )
+    print("✅ processor OK", flush=True)
+
     from notifier import enviar_notificacion
+    print("✅ notifier OK", flush=True)
+
 except Exception as e:
-    print("❌ ERROR EN IMPORTS:")
-    print(str(e))
-    print(traceback.format_exc())
-    time.sleep(30)
-    raise
+    print("❌ ERROR EN IMPORTS:", flush=True)
+    print(str(e), flush=True)
+    print(traceback.format_exc(), flush=True)
+
+    # 🔥 evita restart inmediato (te deja leer logs)
+    time.sleep(60)
+    sys.exit(1)
 
 
 INTERVALO = 300  # 5 minutos
 
 
 def calcular_horas():
-    print("📡 Obteniendo transacciones desde YNAB...")
+    print("📡 Obteniendo transacciones desde YNAB...", flush=True)
 
     try:
         txs = get_transactions()
     except Exception as e:
-        print("❌ Error consultando YNAB:", e)
-        print(traceback.format_exc())
+        print("❌ Error consultando YNAB:", flush=True)
+        print(str(e), flush=True)
+        print(traceback.format_exc(), flush=True)
         return None
 
     if not txs:
-        print("⚠️ No se recibieron transacciones")
+        print("⚠️ No se recibieron transacciones", flush=True)
         return None
 
     try:
@@ -47,61 +60,66 @@ def calcular_horas():
 
         if not consumos.empty and "datetime" in consumos.columns:
             ultimos = consumos.sort_values("datetime", ascending=False).head(3)
-            print("\n🧾 Últimos consumos detectados:")
-            print(ultimos[["memo", "datetime"]].to_string(index=False))
+            print("\n🧾 Últimos consumos detectados:", flush=True)
+            print(ultimos[["memo", "datetime"]].to_string(index=False), flush=True)
         else:
-            print("\n⚠️ No hay consumos detectados")
+            print("\n⚠️ No hay consumos detectados", flush=True)
 
         return horas_sin_consumo(consumos)
 
     except Exception as e:
-        print("❌ Error procesando datos:", e)
-        print(traceback.format_exc())
+        print("❌ Error procesando datos:", flush=True)
+        print(str(e), flush=True)
+        print(traceback.format_exc(), flush=True)
         return None
 
 
 def main():
-    print("🔥 WORKER INICIADO EN RENDER")
-    print(f"⏱️ Intervalo: {INTERVALO}s\n")
+    print("🔥 WORKER INICIADO EN RENDER", flush=True)
+    print(f"⏱️ Intervalo: {INTERVALO}s\n", flush=True)
 
     ultima_hora_notificada = None
 
     while True:
         inicio = time.time()
-        print("🔁 Ejecutando ciclo...\n")
+        print("🔁 Ejecutando ciclo...\n", flush=True)
 
         try:
             horas = calcular_horas()
 
             if horas is None:
-                print("⚠️ No se pudo calcular horas (error controlado)")
+                print("⚠️ No se pudo calcular horas", flush=True)
             else:
                 horas_int = max(0, int(round(horas)))
 
-                print(f"⏱️ Horas sin consumo: {horas:.2f}")
+                print(f"⏱️ Horas sin consumo: {horas:.2f}", flush=True)
 
                 if horas_int > 0 and horas_int != ultima_hora_notificada:
                     mensaje = f"Llevas {horas_int}h sin consumo. Vas bien."
 
                     try:
-                        print("📤 Enviando notificación...")
+                        print("📤 Enviando notificación...", flush=True)
                         enviar_notificacion(mensaje)
-                        print("✅ Notificación enviada")
+                        print("✅ Notificación enviada", flush=True)
+
                         ultima_hora_notificada = horas_int
+
                     except Exception as e:
-                        print("❌ Error enviando notificación:", e)
-                        print(traceback.format_exc())
+                        print("❌ Error enviando notificación:", flush=True)
+                        print(str(e), flush=True)
+                        print(traceback.format_exc(), flush=True)
+
                 else:
-                    print("ℹ️ No se envía notificación")
+                    print("ℹ️ No se envía notificación", flush=True)
 
         except Exception as e:
-            print("❌ ERROR CRÍTICO EN LOOP")
-            print(str(e))
-            print(traceback.format_exc())
+            print("💥 ERROR CRÍTICO EN LOOP:", flush=True)
+            print(str(e), flush=True)
+            print(traceback.format_exc(), flush=True)
 
         duracion = round(time.time() - inicio, 2)
-        print(f"⏱️ Ciclo tomó: {duracion}s")
-        print(f"⏳ Esperando {INTERVALO}s...\n")
+        print(f"⏱️ Ciclo tomó: {duracion}s", flush=True)
+        print(f"⏳ Esperando {INTERVALO}s...\n", flush=True)
 
         time.sleep(INTERVALO)
 
@@ -110,7 +128,10 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print("💥 ERROR FATAL (main murió):")
-        print(str(e))
-        print(traceback.format_exc())
+        print("💀 ERROR FATAL (main murió):", flush=True)
+        print(str(e), flush=True)
+        print(traceback.format_exc(), flush=True)
+
+        # 🔥 evita restart inmediato
         time.sleep(60)
+        sys.exit(1)
