@@ -104,7 +104,7 @@ with tab_consumos:
         datos = consumos.copy()
         leyenda = "histórico completo"
     else:
-        limite = pd.Timestamp.now() - pd.Timedelta(days=dias)
+        limite = pd.Timestamp.now(tz="America/Bogota") - pd.Timedelta(days=dias) 
         datos = consumos[consumos["datetime"] >= limite]
         leyenda = f"últimos {dias} días"
 
