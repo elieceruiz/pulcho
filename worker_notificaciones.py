@@ -14,7 +14,7 @@ from processor import (
 from notifier import enviar_notificacion
 
 
-INTERVALO = 300  # 5 minutos
+INTERVALO = 120  # 🔥 2 minutos (pruebas)
 
 
 def calcular_horas():
@@ -59,8 +59,6 @@ def main():
     print("🔥 WORKER INICIADO", flush=True)
     print(f"⏱️ Intervalo: {INTERVALO}s\n", flush=True)
 
-    ultima_hora_notificada = None
-
     while True:
         inicio = time.time()
         print("🔁 Ejecutando ciclo...\n", flush=True)
@@ -75,19 +73,14 @@ def main():
 
                 print(f"⏱️ Horas sin consumo: {horas:.2f}", flush=True)
 
-                # 🔥 lógica limpia: evita duplicados pero no se traba
-                if horas_int > 0 and (
-                    ultima_hora_notificada is None
-                    or horas_int != ultima_hora_notificada
-                ):
+                # 🔥 MODO PRUEBA: SIEMPRE ENVÍA (cada 2 minutos)
+                if horas_int > 0:
                     mensaje = f"Llevas {horas_int}h sin consumo. Vas bien."
 
                     try:
                         print("📤 Enviando notificación...", flush=True)
                         enviar_notificacion(mensaje)
                         print("✅ Notificación enviada", flush=True)
-
-                        ultima_hora_notificada = horas_int
 
                     except Exception as e:
                         print("❌ Error enviando notificación:", flush=True)
