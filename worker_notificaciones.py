@@ -1,35 +1,17 @@
+# worker_notificaciones.py
+
 import time
 import traceback
-import sys
 
-print("🚨 BOOT 1: archivo ejecutándose", flush=True)
-
-# 🔥 IMPORTS PROTEGIDOS (diagnóstico real)
-try:
-    print("🚨 BOOT 2: cargando módulos...", flush=True)
-
-    from ynab_client import get_transactions
-    print("✅ ynab_client OK", flush=True)
-
-    from processor import (
-        to_dataframe,
-        get_consumos,
-        agregar_hora,
-        agregar_datetime_real,
-        horas_sin_consumo
-    )
-    print("✅ processor OK", flush=True)
-
-    from notifier import enviar_notificacion
-    print("✅ notifier OK", flush=True)
-
-except Exception as e:
-    print("❌ ERROR EN IMPORTS:", flush=True)
-    print(str(e), flush=True)
-    print(traceback.format_exc(), flush=True)
-
-    time.sleep(60)
-    sys.exit(1)
+from ynab_client import get_transactions
+from processor import (
+    to_dataframe,
+    get_consumos,
+    agregar_hora,
+    agregar_datetime_real,
+    horas_sin_consumo
+)
+from notifier import enviar_notificacion
 
 
 INTERVALO = 300  # 5 minutos
@@ -74,7 +56,7 @@ def calcular_horas():
 
 
 def main():
-    print("🔥 WORKER INICIADO EN RENDER", flush=True)
+    print("🔥 WORKER INICIADO", flush=True)
     print(f"⏱️ Intervalo: {INTERVALO}s\n", flush=True)
 
     ultima_hora_notificada = None
@@ -89,14 +71,14 @@ def main():
             if horas is None:
                 print("⚠️ No se pudo calcular horas", flush=True)
             else:
-                horas_int = int(horas)  # 🔥 sin round
+                horas_int = max(0, int(horas))
 
                 print(f"⏱️ Horas sin consumo: {horas:.2f}", flush=True)
 
-                # 🔥 lógica mejorada (sin huecos raros)
+                # 🔥 lógica limpia: evita duplicados pero no se traba
                 if horas_int > 0 and (
                     ultima_hora_notificada is None
-                    or horas_int >= ultima_hora_notificada + 1
+                    or horas_int != ultima_hora_notificada
                 ):
                     mensaje = f"Llevas {horas_int}h sin consumo. Vas bien."
 
@@ -131,9 +113,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print("💀 ERROR FATAL (main murió):", flush=True)
+        print("💀 ERROR FATAL:", flush=True)
         print(str(e), flush=True)
         print(traceback.format_exc(), flush=True)
-
         time.sleep(60)
-        sys.exit(1)
