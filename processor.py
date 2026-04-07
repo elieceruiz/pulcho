@@ -24,9 +24,8 @@ def to_dataframe(transactions):
 
     df["amount"] = df["amount"] / 1000
 
-    # 🔥 CLAVE: normalizar zona horaria
+    # ✅ NO tocar timezone aquí (clave del fix)
     df["date"] = pd.to_datetime(df["date"])
-    df["date"] = df["date"].dt.tz_localize("UTC").dt.tz_convert(TZ)
 
     return df
 
@@ -82,17 +81,21 @@ def agregar_producto_limpio(df):
 def construir_datetime(row):
     fecha = row["date"]
 
-    if row["hora"] == "—":
-        return fecha
-
     try:
-        hora = datetime.strptime(row["hora"], "%H:%M").time()
+        # si hay hora en memo
+        if row["hora"] != "—":
+            hora = datetime.strptime(row["hora"], "%H:%M").time()
+        else:
+            hora = datetime.min.time()
 
-        # 🔥 CLAVE: mantener zona horaria consistente
-        return pd.Timestamp.combine(fecha.date(), hora).tz_localize(TZ)
+        dt = pd.Timestamp.combine(fecha.date(), hora)
+
+        # ✅ AQUÍ se define timezone (correcto)
+        return dt.tz_localize(TZ)
 
     except:
-        return fecha
+        # fallback seguro
+        return pd.Timestamp(fecha).tz_localize(TZ)
 
 
 def agregar_datetime_real(df):
@@ -118,7 +121,6 @@ def horas_sin_consumo(consumos):
     if ultimo is None:
         return 0
 
-    # 🔥 CLAVE: ahora con misma zona
     ahora = pd.Timestamp.now(tz=TZ)
 
     return (ahora - ultimo).total_seconds() / 3600
