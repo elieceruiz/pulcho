@@ -54,6 +54,7 @@ if consumos.empty:
 
 carve = get_carve(df)
 carve = agregar_hora(carve)
+carve = agregar_producto_limpio(carve)  # 🔥 FIX CLAVE
 
 
 # 🔹 MÉTRICAS
@@ -148,7 +149,7 @@ with tab_carve:
 
     tabla["Fecha"] = tabla["date"].apply(formatear_fecha_es)
     tabla["Hora"] = tabla["hora"]
-    tabla["Presentación"] = tabla["memo"]
+    tabla["Presentación"] = tabla["producto"]  # 🔥 FIX (antes memo)
     tabla["Valor"] = tabla["amount"].abs().apply(fmt_money)
 
     tabla = tabla[["Fecha", "Hora", "Presentación", "Valor"]].reset_index(drop=True)
